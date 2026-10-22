@@ -20,6 +20,12 @@ enum Prefs {
         get { d.object(forKey: "askEachTime") as? Bool ?? true }
         set { d.set(newValue, forKey: "askEachTime") }
     }
+
+    /// When false the app keeps working with no menu bar item; opening the app again brings it back.
+    static var showIcon: Bool {
+        get { d.object(forKey: "showIcon") as? Bool ?? true }
+        set { d.set(newValue, forKey: "showIcon") }
+    }
 }
 
 // MARK: - Display helpers
@@ -93,6 +99,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "ipad.landscape", accessibilityDescription: "SidecarSide")
+        statusItem.isVisible = Prefs.showIcon
         enableLaunchAtLoginOnFirstRun()
         rebuildMenu()
 
@@ -113,6 +120,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             handled.insert(id)
             if !Prefs.askEachTime, let side = Prefs.side { Displays.place(id, on: side) }
         }
+    }
+
+    /// Opening the app while it's already running (Finder, Spotlight, Launchpad) shows a hidden icon again.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        setIconVisible(true)
+        return false
+    }
+
+    private func setIconVisible(_ visible: Bool) {
+        Prefs.showIcon = visible
+        statusItem?.isVisible = visible
     }
 
     private func displayAdded(_ id: CGDirectDisplayID) {
@@ -167,6 +185,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
 
+        let hide = NSMenuItem(title: "Hide Menu Bar Icon", action: #selector(hideIcon), keyEquivalent: "")
+        if #available(macOS 14.4, *) { hide.subtitle = "Open SidecarSide again to show it" }
+        hide.toolTip = "SidecarSide keeps working. Open it again from Applications or Spotlight to bring the icon back."
+        menu.addItem(hide)
+
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "About SidecarSide", action: #selector(showAbout), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Quit SidecarSide", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -195,6 +218,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                       .foregroundColor: NSColor.secondaryLabelColor]),
         ])
     }
+
+    @objc private func hideIcon() { setIconVisible(false) }
 
     @objc private func toggleAsk() {
         Prefs.askEachTime.toggle()

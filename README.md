@@ -6,6 +6,7 @@ When an iPad connects as a Sidecar display, a small glass panel asks whether it'
 
 - **← / →** pick a side, **Return** picks the highlighted (last used) side, **Esc** dismisses
 - Menu bar item: switch sides instantly, toggle asking, launch at login
+- Hide the menu bar icon entirely; the app keeps working, and opening SidecarSide again (Applications, Spotlight) brings the icon back
 - Pure AppKit, no dependencies, idle until a display connects
 
 ## Install
